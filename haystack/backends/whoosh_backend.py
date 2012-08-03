@@ -392,7 +392,11 @@ class WhooshSearchBackend(BaseSearchBackend):
             # Using facet with ``allow_overlap`` seems to solve this.
             # NOTE: Having ``reverse`` argument on facet instead of searcher
             # breaks things.
-            facet = sorting.FieldFacet(sort_by, allow_overlap=True)
+            if sort_by:
+                facet = sorting.FieldFacet(sort_by, allow_overlap=True)
+            else:
+                facet = None
+
             raw_results = searcher.search(parsed_query, limit=end_offset, sortedby=facet, reverse=reverse)
 
             # Handle the case where the results have been narrowed.

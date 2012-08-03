@@ -43,6 +43,7 @@ from whoosh.filedb.filestore import FileStorage, RamStorage
 from whoosh.searching import ResultsPage
 from whoosh.spelling import SpellChecker
 from whoosh.writing import AsyncWriter
+from whoosh import sorting
 
 # Handle minimum requirement.
 if not hasattr(whoosh, '__version__') or whoosh.__version__ < (1, 8, 4):
@@ -385,7 +386,14 @@ class WhooshSearchBackend(BaseSearchBackend):
             if not end_offset is None and end_offset <= 0:
                 end_offset = 1
 
-            raw_results = searcher.search(parsed_query, limit=end_offset, sortedby=sort_by, reverse=reverse)
+            # If passing field name directly to ``sortedby`` kwarg of
+            # ``searcher.search()``, ordering seems to not work for some
+            # fields (diameter, offset) while working for some others (price).
+            # Using facet with ``allow_overlap`` seems to solve this.
+            # NOTE: Having ``reverse`` argument on facet instead of searcher
+            # breaks things.
+            facet = sorting.FieldFacet(sort_by, allow_overlap=True)
+            raw_results = searcher.search(parsed_query, limit=end_offset, sortedby=facet, reverse=reverse)
 
             # Handle the case where the results have been narrowed.
             if narrowed_results is not None:
